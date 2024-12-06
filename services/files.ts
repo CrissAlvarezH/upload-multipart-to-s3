@@ -1,16 +1,20 @@
 type UploadFileByPartsOptions = {
   batchSize?: number;
+  partSize?: number;
   onProgress?: (progress: number) => void;
 };
+
+export const DEFAULT_PART_SIZE = 5;
 
 /**
  * Upload a file by parts to S3.
  * @param file - The file to upload.
  * @param options - The options for the upload.
  * @param options.batchSize - The batch size for the upload. Defaults to the number of parts.
+ * @param options.partSize - The size of each part to upload. Defaults to 5MB.
  * @param options.onProgress - A callback function that will be called with the progress of the upload.
  */
-export async function uploadFileByParts(file: File, { batchSize, onProgress }: UploadFileByPartsOptions = {}) {
+export async function uploadFileByParts(file: File, { batchSize, partSize = DEFAULT_PART_SIZE, onProgress }: UploadFileByPartsOptions = {}) {
   const initRes = await fetch("/api/upload/init", {
     method: "POST",
     body: JSON.stringify({
@@ -23,13 +27,13 @@ export async function uploadFileByParts(file: File, { batchSize, onProgress }: U
   const { uploadId } = await initRes.json();
 
   const uploadPartJobs: (() => Promise<void>)[] = [];
-  const partSize = 5 * 1024 * 1024; // 5MB
-  const totalParts = Math.ceil(file.size / partSize);
+  const partSizeInMB = partSize * 1024 * 1024; 
+  const totalParts = Math.ceil(file.size / partSizeInMB);
   const partResults: { PartNumber: number; ETag: string }[] = [];
 
   for (let partNumber = 1; partNumber <= totalParts; partNumber++) {
     uploadPartJobs.push(async () => {
-      const part = file.slice((partNumber - 1) * partSize, partNumber * partSize);
+      const part = file.slice((partNumber - 1) * partSizeInMB, partNumber * partSizeInMB);
 
       const presignedRes = await fetch("/api/upload/get-presigned-url", {
         method: "POST",

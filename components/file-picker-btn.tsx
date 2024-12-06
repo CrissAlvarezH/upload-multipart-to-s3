@@ -2,8 +2,10 @@ import { useState } from "react";
 import { useRef } from "react";
 
 export function FilePickerButton({
+  className,
   onSelectFile,
 }: {
+  className?: string;
   onSelectFile: (file: File) => void;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -36,7 +38,7 @@ export function FilePickerButton({
 
       <button
         onClick={handleUpload}
-        className="font-semibold bg-black text-white px-4 py-2 rounded-md"
+        className={"block font-semibold bg-black text-white px-4 py-2 rounded-md " + className}
       >
         Select file
       </button>

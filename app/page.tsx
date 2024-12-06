@@ -1,13 +1,16 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { uploadFileByParts } from "../services/files";
+import { DEFAULT_PART_SIZE, uploadFileByParts } from "../services/files";
 import { BackspaceIcon, CloudDone, Spinner, UploadIcon } from "@/components/icons";
 import { formatFileSize } from "@/lib/files";
 import { FilePickerButton } from "@/components/file-picker-btn";
 
+
 export default function Home() {
   const [files, setFiles] = useState<UploadFile[]>([]);
+  const [uploadBatchSize, setUploadBatchSize] = useState<number>();
+  const [uploadPartSize, setUploadPartSize] = useState<number>(DEFAULT_PART_SIZE);
 
   const handleSelectFile = (file: File) => {
     setFiles([...files, { file }]);
@@ -26,31 +29,65 @@ export default function Home() {
   };
 
   return (
-    <div className="flex justify-center py-10">
+    <div>
+      <h1 className="text-xl text-center shadow text-gray-800 border-b p-3 font-bold">Upload File to S3</h1>
 
-      <div className="space-y-10">
+      <div className="flex justify-center px-4">
 
-        <div className="flex gap-6 min-w-[550px] items-center justify-center">
-          <h1 className="text-2xl font-bold text-black">Upload File to S3</h1>
-          <FilePickerButton
-            onSelectFile={handleSelectFile}
-          />
-        </div>
+        <div className="flex w-full items-start max-w-4xl py-5 gap-4">
 
-        <div className="flex flex-col gap-4">
-          {files.map((file) => (
-            <UploadFileItem
-              key={file.file.name}
-              file={file}
-              onRemove={() => handleRemoveFile(file)}
-              onUploadSuccess={() => handleUploadSuccess(file)}
-              onUploadError={(error) => handleUploadError(file, error)}
+          <div className="flex-1 bg-gray-100 rounded-lg p-4 space-y-2">
+            <h1 className="text-xl font-bold text-gray-800">Configurations</h1>
+            <div>
+              <p className="text-sm text-gray-500">Batch size (simultaneous uploads)</p>
+              <input
+                type="number"
+                value={uploadBatchSize?.toString() || ""}
+                placeholder="Empty for unlimited"
+                className="border border-gray-300 rounded-md p-2 w-full"
+                onChange={(e) => setUploadBatchSize(e.target.value ? parseInt(e.target.value) : undefined)}
+              />
+            </div>
+
+            <div>
+              <p className="text-sm text-gray-500">Part size (MB)</p>
+              <input
+                type="number"
+                value={uploadPartSize.toString()}
+                placeholder="Part size"
+                className="border border-gray-300 rounded-md p-2 w-full"
+                onChange={(e) => setUploadPartSize(e.target.value ? parseInt(e.target.value) : DEFAULT_PART_SIZE)}
+              />
+            </div>
+          </div>
+
+          <div className="flex-[2]">
+            <FilePickerButton
+              className="w-full"
+              onSelectFile={handleSelectFile}
             />
-          ))}
+
+            {files.length === 0 && (
+              <p className="text-gray-500 py-10 text-center">No files selected</p>
+            )}
+
+            <div className="flex flex-col gap-4 pt-4">
+              {files.map((file) => (
+                <UploadFileItem
+                  key={file.file.name}
+                  file={file}
+                  uploadConfig={{ batchSize: uploadBatchSize, partSize: uploadPartSize }}
+                  onRemove={() => handleRemoveFile(file)}
+                  onUploadSuccess={() => handleUploadSuccess(file)}
+                  onUploadError={(error) => handleUploadError(file, error)}
+                />
+              ))}
+            </div>
+
+          </div>
+
         </div>
-
       </div>
-
     </div>
   );
 }
@@ -63,19 +100,27 @@ type UploadFile = {
 
 type UploadFileItemProps = {
   file: UploadFile;
+  uploadConfig?: {
+    batchSize?: number;
+    partSize?: number;
+  };
   onRemove: () => void;
   onUploadSuccess: () => void;
   onUploadError: (error: Error) => void;
 }
 
-function UploadFileItem({ file, onRemove, onUploadSuccess, onUploadError }: UploadFileItemProps) {
+function UploadFileItem({ file, uploadConfig, onRemove, onUploadSuccess, onUploadError }: UploadFileItemProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const handleUpload = async (file: UploadFile) => {
     setIsUploading(true);
 
-    uploadFileByParts(file.file, { batchSize: 3, onProgress: setUploadProgress })
+    uploadFileByParts(file.file, {
+      batchSize: uploadConfig?.batchSize,
+      partSize: uploadConfig?.partSize,
+      onProgress: setUploadProgress
+    })
       .then(() => {
         onUploadSuccess();
       })
