@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Descripción
+En este proyecto se expone una forma de subir archivos grandes a aws s3 por partes usando url prefirmadas evitando pasar por servicios propios para no tener problemas de storage o timeout
 
-## Getting Started
+## Proceso
+La idea principal es llevar el procesamiento del archivo al frontend, el cual será encargado de partir el archivo y enviar cada parte directamente a aws s3, para esto requerirá de urls
+prefirmadas las cuales consultará al backend. El backend se encargará de generar las urls prefirmadas para cada parte del archivo a subir así como tambien de comunicarse con s3 para 
+notificar que todas las partes han sido subidas exitosamente, completando así el proceso.
 
-First, run the development server:
+<img src='https://github.com/CrissAlvarezH/upload-multipart-to-s3/blob/main/docs/images/diagram.jpg'/>
+
+Es posible ejecutar asincronamente el envío de cada parte, tambien se puede configurar el envio por batches, de esta forma si deseamos enviar de 3 partes al tiempo se vería de la siguiente manera:
+
+<img src='https://github.com/CrissAlvarezH/upload-multipart-to-s3/blob/main/docs/images/uploading_file.png'/>
+
+Una vez completada la subida de todas las partes el frontend realiza una llamada final a `/complete`
+
+<img src='https://github.com/CrissAlvarezH/upload-multipart-to-s3/blob/main/docs/images/upload_completed.png'/>
+
+## Requerimientos
+Aparte de tener credenciales de aws con permisos suficiente para subir archivos ya sea cargados por sesión o por variables de entorno directamente en el codigo, tambien será
+necesario configurar los CORS del bucket para aceptar por un lado la subida directa del frontend así como tambien la lectura del header Etag que permite identficar cada parte subida.
+La configuración se ve de la siguiente manera en la consola de aws:
+
+``` 
+[
+    {
+        "AllowedHeaders": [
+            "*"
+        ],
+        "AllowedMethods": [
+            "PUT",
+            "POST",
+            "DELETE"
+        ],
+        "AllowedOrigins": [
+            "*"
+        ],
+        "ExposeHeaders": [
+            "Etag"
+        ]
+    }
+]
+```
+> Esta configuración se encuentra en: AWS S3 > Bucker > Permissions tab > CORS configuration
+
+## Correr localmente
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
