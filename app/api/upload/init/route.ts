@@ -1,4 +1,4 @@
-import { getMultipartUploadId } from "@/app/services/aws";
+import { getMultipartUploadId } from "@/services/aws";
 import { NextResponse } from "next/server";
 
 

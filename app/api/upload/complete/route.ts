@@ -1,15 +1,15 @@
-import { completeMultipartUpload } from "@/app/services/aws";
+import { completeMultipartUpload } from "@/services/aws";
 import { NextResponse } from "next/dist/server/web/spec-extension/response";
 
 export async function POST(request: Request) {
-  const body = await request.json();
+  const { filename, uploadId, parts } = await request.json();
 
-  await completeMultipartUpload(
+  const res = await completeMultipartUpload(
     process.env.AWS_BUCKET_NAME!,
-    body.filename,
-    body.uploadId,
-    body.parts
+    filename,
+    uploadId,
+    parts
   );
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, aws_response: res });
 }
