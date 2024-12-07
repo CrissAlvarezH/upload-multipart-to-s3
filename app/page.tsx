@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { DEFAULT_PART_SIZE, uploadFileByParts } from "../services/files";
+import { useState } from "react";
+import { uploadFileByParts } from "../services/files";
 import { BackspaceIcon, CloudDone, Spinner, UploadIcon } from "@/components/icons";
 import { formatFileSize } from "@/lib/files";
 import { FilePickerButton } from "@/components/file-picker-btn";
@@ -10,7 +10,7 @@ import { FilePickerButton } from "@/components/file-picker-btn";
 export default function Home() {
   const [files, setFiles] = useState<UploadFile[]>([]);
   const [uploadBatchSize, setUploadBatchSize] = useState<number>();
-  const [uploadPartSize, setUploadPartSize] = useState<number>(DEFAULT_PART_SIZE);
+  const [uploadPartSize, setUploadPartSize] = useState<number>();
 
   const handleSelectFile = (file: File) => {
     setFiles([...files, { file }]);
@@ -53,10 +53,10 @@ export default function Home() {
               <p className="text-sm text-gray-500">Part size (MB)</p>
               <input
                 type="number"
-                value={uploadPartSize.toString()}
-                placeholder="Part size"
+                value={uploadPartSize?.toString() || ""}
+                placeholder="Default 5MB"
                 className="border border-gray-300 rounded-md p-2 w-full"
-                onChange={(e) => setUploadPartSize(e.target.value ? parseInt(e.target.value) : DEFAULT_PART_SIZE)}
+                onChange={(e) => setUploadPartSize(e.target.value ? parseInt(e.target.value) : undefined)}
               />
             </div>
           </div>
