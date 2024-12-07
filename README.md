@@ -28,12 +28,10 @@ La configuración se ve de la siguiente manera en la consola de aws:
             "*"
         ],
         "AllowedMethods": [
-            "PUT",
-            "POST",
-            "DELETE"
+            "PUT"
         ],
         "AllowedOrigins": [
-            "*"
+            "http://localhost:3000"
         ],
         "ExposeHeaders": [
             "Etag"
