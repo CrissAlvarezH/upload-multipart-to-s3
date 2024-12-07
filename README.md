@@ -21,7 +21,7 @@ Aparte de tener credenciales de aws con permisos suficiente para subir archivos 
 necesario configurar los CORS del bucket para aceptar por un lado la subida directa del frontend así como tambien la lectura del header Etag que permite identficar cada parte subida.
 La configuración se ve de la siguiente manera en la consola de aws:
 
-``` 
+```json
 [
     {
         "AllowedHeaders": [
