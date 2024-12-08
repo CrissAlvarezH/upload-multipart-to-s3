@@ -6,7 +6,7 @@ La idea principal es llevar el procesamiento del archivo al frontend, el cual se
 prefirmadas las cuales consultará al backend. El backend se encargará de generar las urls prefirmadas para cada parte del archivo a subir así como tambien de comunicarse con s3 para 
 notificar que todas las partes han sido subidas exitosamente, completando así el proceso.
 
-<img src='https://github.com/CrissAlvarezH/upload-multipart-to-s3/blob/main/docs/images/diagram.jpg'/>
+<img width="500px" src='https://github.com/CrissAlvarezH/upload-multipart-to-s3/blob/main/docs/images/upload_process_diagram.png'/>
 
 Es posible ejecutar asincronamente el envío de cada parte, tambien se puede configurar el envio por batches, de esta forma si deseamos enviar de 3 partes al tiempo se vería de la siguiente manera:
 

@@ -1,0 +1,37 @@
+// Syntax docs: https://docs.eraser.io/docs/syntax-2
+// app.eraser.io > Diagram as code > Sequence 
+
+colorMode pastel
+typeface clean
+title Upload file process
+
+Frontend [icon: monitor, color: blue]
+Backend [icon: server, color: orange]
+S3 [icon: aws-s3, color: green]
+
+Frontend > Backend: /init
+activate Frontend
+activate Backend
+Backend <> S3: Request Upload ID
+Backend > Frontend: Response Upload ID
+deactivate Backend
+deactivate Frontend
+
+loop [label: Repeat for every file part, color: purple] {
+  Frontend > Backend: /get-presigned-url
+  activate Frontend 
+  activate Backend 
+  Backend <> S3: Get presigned url by part
+  Backend > Frontend:  Response presigned url    
+  deactivate Backend
+  Frontend <> S3: Upload file part using presigned url
+  deactivate Frontend
+}
+
+Frontend > Backend: /complete
+activate Frontend
+activate Backend
+Backend <> S3: Complete multipart
+Backend > Frontend: Success
+deactivate Backend
+deactivate Frontend
