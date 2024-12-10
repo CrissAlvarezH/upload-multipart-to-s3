@@ -41,6 +41,29 @@ La configuración se ve de la siguiente manera en la consola de aws:
 ```
 > Esta configuración se encuentra en: AWS S3 > Bucker > Permissions tab > CORS configuration
 
+Por otro lado, el rol encargado de subir iniciar la multipart upload, generar las urls prefirmadas y completar la carga debe tener los siguientes permisos
+```json
+{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Action": [
+				"s3:AbortMultipartUpload",
+				"s3:ListMultipartUploadParts",
+				"s3:ListBucketMultipartUploads",
+				"s3:PutObject",
+				"s3:GetObject"
+			],
+			"Resource": [
+				"arn:aws:s3:::<bucket_name>/*",
+				"arn:aws:s3:::<bucket_name>"
+			],
+			"Effect": "Allow"
+		}
+	]
+}
+```
+
 ## Correr localmente
 
 ```bash
