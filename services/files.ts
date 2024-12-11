@@ -14,17 +14,11 @@ export const DEFAULT_PART_SIZE = 5;
  * @param options.partSize - The size of each part to upload. Defaults to 5MB.
  * @param options.onProgress - A callback function that will be called with the progress of the upload.
  */
-export async function uploadFileByParts(file: File, { batchSize, partSize = DEFAULT_PART_SIZE, onProgress }: UploadFileByPartsOptions = {}) {
-  const initRes = await fetch("/api/upload/init", {
-    method: "POST",
-    body: JSON.stringify({
-      filename: file.name,
-    }),
-  });
-  if (!initRes.ok) {
-    throw new Error("Failed to initialize multipart upload");
-  }
-  const { uploadId } = await initRes.json();
+export async function uploadFileByParts(
+  file: File,
+  { batchSize, partSize = DEFAULT_PART_SIZE, onProgress }: UploadFileByPartsOptions = {}
+) {
+  const uploadId = await initUpload(file.name);
 
   const uploadPartJobs: (() => Promise<void>)[] = [];
   const partSizeInMB = partSize * 1024 * 1024; 
@@ -35,30 +29,13 @@ export async function uploadFileByParts(file: File, { batchSize, partSize = DEFA
     uploadPartJobs.push(async () => {
       const part = file.slice((partNumber - 1) * partSizeInMB, partNumber * partSizeInMB);
 
-      const presignedRes = await fetch("/api/upload/get-presigned-url", {
-        method: "POST",
-        body: JSON.stringify({
-          filename: file.name,
-          uploadId,
-          partNumber,
-        }),
-      });
-      if (!presignedRes.ok) {
-        throw new Error("Failed to get presigned url");
-      }
-      const { url } = await presignedRes.json();
+      const url = await getPresignedUrl(file.name, uploadId, partNumber);
 
-      const uploadRes = await fetch(url, {
-        method: "PUT",
-        body: part,
-      });
-      if (!uploadRes.ok) {
-        throw new Error("Failed to upload part");
-      }
+      const etag = await uploadPart(url, part);
 
       partResults.push({
         PartNumber: partNumber,
-        ETag: uploadRes.headers.get("Etag")!,
+        ETag: etag,
       });
 
       // We don't want to show 100% progress because is missing the call to /complete
@@ -73,17 +50,68 @@ export async function uploadFileByParts(file: File, { batchSize, partSize = DEFA
     await Promise.all(batch.map(job => job()));
   }
 
-  const completeRes = await fetch("/api/upload/complete", {
+  await completeUpload(file.name, uploadId, partResults);
+  onProgress?.(100);
+}
+
+async function initUpload(filename: string) {
+  const res = await fetch("/api/upload/init", {
     method: "POST",
     body: JSON.stringify({
-      filename: file.name,
-      uploadId,
-      // parts must be sorted by part number
-      parts: partResults.sort((a, b) => a.PartNumber - b.PartNumber),
+      filename,
     }),
   });
-  if (!completeRes.ok) {
-    throw new Error("Failed to complete multipart upload");
-  }
-  onProgress?.(100);
+
+  if (!res.ok) 
+    throw new Error("Failed to initialize multipart upload");
+
+  const { uploadId } = await res.json();
+  return uploadId;
+}
+
+async function getPresignedUrl(
+  filename: string,
+  uploadId: string,
+  partNumber: number
+) {
+  const res = await fetch("/api/upload/get-presigned-url", {
+    method: "POST",
+    body: JSON.stringify({
+      filename,
+      uploadId,
+      partNumber,
+    }),
+  });
+
+  if (!res.ok) 
+    throw new Error("Failed to get presigned url");
+
+  const { url } = await res.json();
+  return url;
+}
+
+async function uploadPart(presigned_url: string, part: Blob) {
+  const res = await fetch(presigned_url, {
+    method: "PUT",
+    body: part,
+  });
+  if (!res.ok) throw new Error("Failed to upload part");
+  return res.headers.get("Etag")!;
+}
+
+async function completeUpload(
+  filename: string,
+  uploadId: string,
+  parts: { PartNumber: number; ETag: string }[]
+) {
+  const res = await fetch("/api/upload/complete", {
+    method: "POST",
+    body: JSON.stringify({
+      filename,
+      uploadId,
+      parts: parts.sort((a, b) => a.PartNumber - b.PartNumber),
+    }),
+  });
+
+  if (!res.ok) throw new Error("Failed to complete multipart upload");
 }
