@@ -44,7 +44,7 @@ export async function getPresignedUrlByPart(
       UploadId: uploadId,
       PartNumber: partNumber,
     }),
-    { expiresIn: 60 * 60 * 24 }
+    { expiresIn: 15 * 60 } // 15 minutes
   );
 }
 

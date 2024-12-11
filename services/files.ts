@@ -27,10 +27,9 @@ export async function uploadFileByParts(
 
   for (let partNumber = 1; partNumber <= totalParts; partNumber++) {
     uploadPartJobs.push(async () => {
-      const part = file.slice((partNumber - 1) * partSizeInMB, partNumber * partSizeInMB);
-
       const url = await getPresignedUrl(file.name, uploadId, partNumber);
 
+      const part = file.slice((partNumber - 1) * partSizeInMB, partNumber * partSizeInMB);
       const etag = await uploadPart(url, part);
 
       partResults.push({
@@ -38,9 +37,8 @@ export async function uploadFileByParts(
         ETag: etag,
       });
 
-      // We don't want to show 100% progress because is missing the call to /complete
-      const progress = Math.min(99, Math.floor(partResults.length / totalParts * 100));
-      onProgress?.(progress);
+      // We use 99% instead of 100% because is missing the call to /complete
+      onProgress?.(partResults.length / totalParts * 99);
     });
   }
 
